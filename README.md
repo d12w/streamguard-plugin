@@ -1,5 +1,7 @@
 # StreamGuard
 
+> **Already have Vencord or Equicord built from source?** Skip steps 1 and 2 below. Go straight to [Add StreamGuard](#3-add-streamguard), copy the four plugin files into `src/userplugins/streamGuard`, then run `pnpm build` and restart Discord. Run `pnpm inject` only if your source build has not been injected into Discord yet.
+
 > **Privacy warning: experimental; do not rely on StreamGuard to protect private information.** The project author reports that it works on both Equicord and Vencord. The build and mock-test results in this repository are not an independent live-client verification. There is no guarantee that selectors match every client version, that blur is unreadable, or that every sensitive surface is covered. Do not expose private content to an audience, screen recording, or screenshots on the assumption that this plugin will hide it. Close sensitive content and use Discord and operating-system controls instead.
 >
 > **Notifications are not suppressed on either client.** The suppression setting is present and defaults to on, but the implementation cannot change notification settings: restore is a no-op. Manually disable or mute Discord popups, sounds, desktop/system notifications, and notifications from other plugins or applications before sharing.
@@ -66,8 +68,8 @@ The first build prepares the client. The installer opened by `pnpm inject` will 
 
 1. Download the [StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip) and extract it.
 2. Open the extracted `streamguard-plugin-main` folder.
-3. In your Vencord/Equicord source folder, open `src/userplugins` and create a folder named `StreamGuard`.
-4. Copy these four files from `streamguard-plugin-main` into the new `StreamGuard` folder:
+3. In your Vencord/Equicord source folder, open `src/userplugins` and create a folder named `streamGuard`.
+4. Copy these four files from `streamguard-plugin-main` into the new `streamGuard` folder:
    - `index.tsx`
    - `logic.ts`
    - `compat.ts`
@@ -76,7 +78,7 @@ The first build prepares the client. The installer opened by `pnpm inject` will 
 Your folder should look like this:
 
 ```text
-src/userplugins/StreamGuard/
+src/userplugins/streamGuard/
 ├── index.tsx
 ├── logic.ts
 ├── compat.ts
@@ -98,9 +100,9 @@ You normally do **not** need to run `pnpm inject` again after adding or updating
 
 ### Already have Vencord or Equicord from source?
 
-Skip steps 1 and 2. Download and extract the StreamGuard ZIP, copy the four files into your existing `src/userplugins/StreamGuard` folder, then run `pnpm build` from the client source folder and restart Discord. If the source build has not been injected into Discord yet, run `pnpm inject` once.
+Skip steps 1 and 2. Download and extract the StreamGuard ZIP, copy the four files into your existing `src/userplugins/streamGuard` folder, then run `pnpm build` from the client source folder and restart Discord. If the source build has not been injected into Discord yet, run `pnpm inject` once.
 
-To update StreamGuard later, replace its four files in `src/userplugins/StreamGuard`, run `pnpm build`, and restart Discord.
+To update StreamGuard later, replace its four files in `src/userplugins/streamGuard`, run `pnpm build`, and restart Discord.
 ## Use and reset
 
 1. **Before any live sharing**, manually disable/mute notifications and test using non-sensitive fake content with no audience or live stream. With StreamGuard enabled, enter `/streamguard` to toggle manual protection on. Inspect the sidebar, friends/activity sections, hidden chat, composer, overlay, and indicator. Try the context-menu actions and `/streamguard-panic`. This is only a smoke test, not proof that screenshares or screenshots are safe. If anything is unexpected, stop and do not share private content.
