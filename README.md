@@ -60,7 +60,7 @@ Follow these steps in order. You only need to install Git, Node.js, and pnpm onc
 3. Run the installer, keep the default options, and finish.
 4. Close and reopen PowerShell.
 
-#### 3. Install pnpm
+#### 3. Install [pnpm](https://pnpm.io/installation)
 
 Open PowerShell and run:
 
