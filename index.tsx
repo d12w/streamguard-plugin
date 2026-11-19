@@ -660,7 +660,7 @@ function blockHiddenComposer(event: Event) {
 export default definePlugin({
     name: "StreamGuard",
     description: "Automatically blurs your private chats (names, avatars, messages) while you screen share, and lets you reveal specific chats on demand with a right click.",
-    authors: [{ name: "You", id: 0n }],
+    authors: [{ name: "d12w", id: 0n }],
     settings,
     contextMenus: {
         "user-context": patchPrivateMenu,
