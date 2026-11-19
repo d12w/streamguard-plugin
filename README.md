@@ -12,46 +12,107 @@ StreamGuard is a single-source user plugin for the pinned Equicord and Vencord t
 
 ## Install from source
 
-**This is a developer plugin for source checkouts, not a one-click plugin for the ordinary Discord app.** You need Git, Node.js 22 or newer, and pnpm. Build and install each client mod using that project's own current instructions for your operating system. The plugin was build-checked at the client commits listed in [COMPATIBILITY.md](COMPATIBILITY.md); upstream APIs can change. Use the pnpm version declared by the client checkout when possible.
+StreamGuard is a **user plugin for Vencord and Equicord source checkouts**. It is not installed directly into the ordinary Discord app, and downloading the ZIP alone does not install it.
 
-Get the plugin source using **either** Git or GitHub's built-in ZIP download. GitHub automatically creates the ZIP when you choose **Code → Download ZIP**; no separate release asset is needed. The ZIP contains the repository's tracked files (including documentation, tests, and development tools), not just the runtime files. It extracts to a folder such as `streamguard-plugin-main`. Because this repository is public, anyone can view and download it without signing in.
+### Quick path — already have Vencord or Equicord from source?
 
-**Option A — clone with Git** (run in a working directory where you want the three source checkouts):
+**Skip the full setup below.** If you already have a Vencord/Equicord source folder and its dependencies are installed, you only need the StreamGuard files:
 
-```sh
+1. Download the [latest StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip).
+2. Extract the ZIP. Open the extracted \`streamguard-plugin-main\` folder.
+3. In your existing Vencord or Equicord folder, create (if needed) \`src/userplugins/StreamGuard\`.
+4. Copy **only** these four files from the extracted plugin folder into that \`StreamGuard\` folder:
+   - \`index.tsx\`
+   - \`logic.ts\`
+   - \`compat.ts\`
+   - \`styles.css\`
+5. Open PowerShell in your Vencord/Equicord source folder and run:
+
+   \`\`\`powershell
+   pnpm build
+   \`\`\`
+
+6. Follow that client project's instructions to install/use your rebuilt client mod, restart Discord, and enable **StreamGuard** in its Plugins settings.
+
+The final folder layout must look like this (the same for either client):
+
+\`\`\`text
+Vencord-or-Equicord/
+└── src/
+    └── userplugins/
+        └── StreamGuard/
+            ├── index.tsx
+            ├── logic.ts
+            ├── compat.ts
+            └── styles.css
+\`\`\`
+
+**Important:** do not put the extracted \`streamguard-plugin-main\` folder itself inside \`src/userplugins\`. The four files must be directly inside the \`StreamGuard\` folder. If that folder already exists, back it up before replacing files. You do not need to clone Vencord/Equicord again or reinstall dependencies if your existing checkout is already set up. If dependencies are missing, run \`pnpm install --frozen-lockfile\` from the client folder before building.
+
+### Full setup — new to Vencord/Equicord source?
+
+If you do not already have a source checkout, first prepare the client, then add StreamGuard. You need Git, Node.js 22 or newer, and pnpm. Use the pnpm version declared by the client checkout when possible. Follow the selected project's current setup instructions for your operating system; upstream setup steps can change.
+
+#### 1. Get the StreamGuard source
+
+Choose **one** option.
+
+**Option A — Git (PowerShell):**
+
+Run this from the parent folder where you want the plugin repository:
+
+\`\`\`powershell
 git clone https://github.com/d12w/streamguard-plugin.git
-PLUGIN_DIR="$(pwd)/streamguard-plugin"
-```
+$PluginDir = (Resolve-Path ".\\streamguard-plugin").Path
+\`\`\`
 
-**Option B — download and extract ZIP:** on this repository page, choose **Code → Download ZIP**, then extract `streamguard-plugin-main.zip`. Point `PLUGIN_DIR` at the extracted `streamguard-plugin-main` folder. You can also [download the ZIP directly](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip).
+**Option B — ZIP (PowerShell):**
 
-Do **not** copy the entire plugin repository into `src/userplugins`: copy only these four runtime files. If a `StreamGuard` folder already exists in the client checkout, back it up first.
+Download [StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip), then run these commands in the folder where the ZIP was saved:
 
-### Equicord
+\`\`\`powershell
+Invoke-WebRequest "https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip" -OutFile ".\\streamguard-plugin.zip"
+Expand-Archive ".\\streamguard-plugin.zip" -DestinationPath "."
+$PluginDir = (Resolve-Path ".\\streamguard-plugin-main").Path
+\`\`\`
 
-```sh
+GitHub's ZIP contains the repository files (documentation, tests, and development tools too). Only the four runtime files listed above belong in the client plugin folder.
+
+#### 2. Set up Equicord or Vencord
+
+Choose **one** client.
+
+**Equicord (PowerShell):**
+
+\`\`\`powershell
 git clone https://github.com/Equicord/Equicord.git
-cd Equicord
+Set-Location ".\\Equicord"
 pnpm install --frozen-lockfile
-mkdir -p src/userplugins/StreamGuard
-cp "$PLUGIN_DIR/index.tsx" "$PLUGIN_DIR/logic.ts" "$PLUGIN_DIR/compat.ts" "$PLUGIN_DIR/styles.css" src/userplugins/StreamGuard/
+New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
+Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
 pnpm build
-```
+\`\`\`
 
-### Vencord
+**Vencord (PowerShell):**
 
-```sh
+\`\`\`powershell
 git clone https://github.com/Vendicated/Vencord.git
-cd Vencord
+Set-Location ".\\Vencord"
 pnpm install --frozen-lockfile
-mkdir -p src/userplugins/StreamGuard
-cp "$PLUGIN_DIR/index.tsx" "$PLUGIN_DIR/logic.ts" "$PLUGIN_DIR/compat.ts" "$PLUGIN_DIR/styles.css" src/userplugins/StreamGuard/
+New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
+Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
 pnpm build
-```
+\`\`\`
 
-Use the respective project's current development installation/injection instructions to make Discord use your rebuilt client mod; building alone does not necessarily install it. Restart Discord, then enable **StreamGuard** in the client mod's Plugins settings. To update a Git clone, run `git -C "$PLUGIN_DIR" pull`; for a ZIP install, download and extract the newest ZIP, then point `PLUGIN_DIR` at that folder. In either case, recopy the same four runtime files and rebuild. These commands are examples for a Unix-like shell; Windows users should adapt the copy commands for PowerShell and follow the client project's Windows setup instructions.
+#### 3. Finish installation
 
-The helper `tools/sync-to-repos.sh` can copy the plugin source to one or more checkout paths, but it **replaces** their existing `src/userplugins/StreamGuard` folders. Back up local edits before using it.
+Building creates the client build; it does **not necessarily install/inject it into Discord**. Follow the selected client's current development installation/injection instructions for your operating system. Then restart Discord and enable **StreamGuard** in the client mod's Plugins settings.
+
+#### 4. Update StreamGuard later
+
+Download/extract the newest ZIP (or run \`git -C "$PluginDir" pull\` if you used Git), copy the same four runtime files into \`src/userplugins/StreamGuard\`, and run \`pnpm build\` again from the client folder. You do not need to reclone the client or reinstall dependencies for a normal plugin update.
+
+The helper \`tools/sync-to-repos.sh\` is optional and intended for developers using a Unix-like shell. It **replaces** target \`src/userplugins/StreamGuard\` folders; back up local edits before using it. The PowerShell instructions above do not require this helper.
 
 ## Use and reset
 
