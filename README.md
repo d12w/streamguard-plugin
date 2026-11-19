@@ -19,24 +19,24 @@ StreamGuard is a **user plugin for Vencord and Equicord source checkouts**. It i
 **Skip the full setup below.** If you already have a Vencord/Equicord source folder and its dependencies are installed, you only need the StreamGuard files:
 
 1. Download the [latest StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip).
-2. Extract the ZIP. Open the extracted \`streamguard-plugin-main\` folder.
-3. In your existing Vencord or Equicord folder, create (if needed) \`src/userplugins/StreamGuard\`.
-4. Copy **only** these four files from the extracted plugin folder into that \`StreamGuard\` folder:
-   - \`index.tsx\`
-   - \`logic.ts\`
-   - \`compat.ts\`
-   - \`styles.css\`
+2. Extract the ZIP. Open the extracted `streamguard-plugin-main` folder.
+3. In your existing Vencord or Equicord folder, create (if needed) `src/userplugins/StreamGuard`.
+4. Copy **only** these four files from the extracted plugin folder into that `StreamGuard` folder:
+   - `index.tsx`
+   - `logic.ts`
+   - `compat.ts`
+   - `styles.css`
 5. Open PowerShell in your Vencord/Equicord source folder and run:
 
-   \`\`\`powershell
+   ```powershell
    pnpm build
-   \`\`\`
+   ```
 
 6. Follow that client project's instructions to install/use your rebuilt client mod, restart Discord, and enable **StreamGuard** in its Plugins settings.
 
 The final folder layout must look like this (the same for either client):
 
-\`\`\`text
+```text
 Vencord-or-Equicord/
 └── src/
     └── userplugins/
@@ -45,9 +45,9 @@ Vencord-or-Equicord/
             ├── logic.ts
             ├── compat.ts
             └── styles.css
-\`\`\`
+```
 
-**Important:** do not put the extracted \`streamguard-plugin-main\` folder itself inside \`src/userplugins\`. The four files must be directly inside the \`StreamGuard\` folder. If that folder already exists, back it up before replacing files. You do not need to clone Vencord/Equicord again or reinstall dependencies if your existing checkout is already set up. If dependencies are missing, run \`pnpm install --frozen-lockfile\` from the client folder before building.
+**Important:** do not put the extracted `streamguard-plugin-main` folder itself inside `src/userplugins`. The four files must be directly inside the `StreamGuard` folder. If that folder already exists, back it up before replacing files. You do not need to clone Vencord/Equicord again or reinstall dependencies if your existing checkout is already set up. If dependencies are missing, run `pnpm install --frozen-lockfile` from the client folder before building.
 
 ### Full setup — new to Vencord/Equicord source?
 
@@ -61,20 +61,20 @@ Choose **one** option.
 
 Run this from the parent folder where you want the plugin repository:
 
-\`\`\`powershell
+```powershell
 git clone https://github.com/d12w/streamguard-plugin.git
-$PluginDir = (Resolve-Path ".\\streamguard-plugin").Path
-\`\`\`
+$PluginDir = (Resolve-Path ".\streamguard-plugin").Path
+```
 
 **Option B — ZIP (PowerShell):**
 
 Download [StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip), then run these commands in the folder where the ZIP was saved:
 
-\`\`\`powershell
-Invoke-WebRequest "https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip" -OutFile ".\\streamguard-plugin.zip"
-Expand-Archive ".\\streamguard-plugin.zip" -DestinationPath "."
-$PluginDir = (Resolve-Path ".\\streamguard-plugin-main").Path
-\`\`\`
+```powershell
+Invoke-WebRequest "https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip" -OutFile ".\streamguard-plugin.zip"
+Expand-Archive ".\streamguard-plugin.zip" -DestinationPath "."
+$PluginDir = (Resolve-Path ".\streamguard-plugin-main").Path
+```
 
 GitHub's ZIP contains the repository files (documentation, tests, and development tools too). Only the four runtime files listed above belong in the client plugin folder.
 
@@ -84,25 +84,25 @@ Choose **one** client.
 
 **Equicord (PowerShell):**
 
-\`\`\`powershell
+```powershell
 git clone https://github.com/Equicord/Equicord.git
-Set-Location ".\\Equicord"
+Set-Location ".\Equicord"
 pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
 Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
 pnpm build
-\`\`\`
+```
 
 **Vencord (PowerShell):**
 
-\`\`\`powershell
+```powershell
 git clone https://github.com/Vendicated/Vencord.git
-Set-Location ".\\Vencord"
+Set-Location ".\Vencord"
 pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
 Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
 pnpm build
-\`\`\`
+```
 
 #### 3. Finish installation
 
@@ -110,9 +110,9 @@ Building creates the client build; it does **not necessarily install/inject it i
 
 #### 4. Update StreamGuard later
 
-Download/extract the newest ZIP (or run \`git -C "$PluginDir" pull\` if you used Git), copy the same four runtime files into \`src/userplugins/StreamGuard\`, and run \`pnpm build\` again from the client folder. You do not need to reclone the client or reinstall dependencies for a normal plugin update.
+Download/extract the newest ZIP (or run `git -C "$PluginDir" pull` if you used Git), copy the same four runtime files into `src/userplugins/StreamGuard`, and run `pnpm build` again from the client folder. You do not need to reclone the client or reinstall dependencies for a normal plugin update.
 
-The helper \`tools/sync-to-repos.sh\` is optional and intended for developers using a Unix-like shell. It **replaces** target \`src/userplugins/StreamGuard\` folders; back up local edits before using it. The PowerShell instructions above do not require this helper.
+The helper `tools/sync-to-repos.sh` is optional and intended for developers using a Unix-like shell. It **replaces** target `src/userplugins/StreamGuard` folders; back up local edits before using it. The PowerShell instructions above do not require this helper.
 
 ## Use and reset
 
