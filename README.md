@@ -41,40 +41,93 @@ src/userplugins/StreamGuard/
 └── styles.css
 ```
 
-**Copy the four files, not the whole extracted ZIP folder.** If your source checkout is already set up, you do not need to clone it again or reinstall dependencies.
+**Copy the four files, not the whole extracted ZIP folder.** If your source checkout is ready, you do not need to clone it again or reinstall dependencies.
 
-### New to Vencord or Equicord?
+### New to Vencord or Equicord? (Windows)
 
-You need **Git, Node.js 22+, and pnpm**.
+Follow these steps in order. You only need to install Git, Node.js, and pnpm once.
 
-1. Download StreamGuard using the ZIP link above and extract it.
-2. Clone and set up **one** client:
+#### 1. Install Git
 
-   **Equicord**
-   ```powershell
-   git clone https://github.com/Equicord/Equicord.git
-   cd Equicord
-   pnpm install --frozen-lockfile
-   ```
+1. Open the official [Git for Windows download](https://git-scm.com/install/win).
+2. Download the installer and run it.
+3. Keep the default options and finish the installation.
 
-   **Vencord**
-   ```powershell
-   git clone https://github.com/Vendicated/Vencord.git
-   cd Vencord
-   pnpm install --frozen-lockfile
-   ```
+#### 2. Install Node.js
 
-3. In the client folder, create the plugin folder and copy the four files. Replace `$PluginDir` with the full path to the extracted `streamguard-plugin-main` folder:
+1. Open the official [Node.js download page](https://nodejs.org/en/download/).
+2. Download the **LTS Windows Installer (.msi)**. Use Node.js **22 or newer**.
+3. Run the installer, keep the default options, and finish.
+4. Close and reopen PowerShell.
 
-   ```powershell
-   New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
-   Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
-   pnpm build
-   ```
+#### 3. Install pnpm
 
-4. Follow the client project's instructions to install your build, restart Discord, and enable **StreamGuard** in Plugins.
+Open PowerShell and run:
 
-To update the plugin later, copy the four latest files into the same folder and run `pnpm build` again.
+```powershell
+npm install --global pnpm@12
+```
+
+#### 4. Check that everything is installed
+
+Run these commands:
+
+```powershell
+git --version
+node --version
+npm --version
+pnpm --version
+```
+
+Each command should show a version number. If a command is not recognized, restart PowerShell or reinstall that tool before continuing.
+
+#### 5. Download StreamGuard and a client
+
+Choose a place for the source folders. In PowerShell, run:
+
+```powershell
+mkdir "$HOME\StreamGuard-Setup"
+cd "$HOME\StreamGuard-Setup"
+git clone https://github.com/d12w/streamguard-plugin.git
+$PluginDir = (Resolve-Path ".\streamguard-plugin").Path
+```
+
+Now choose **one** client:
+
+**Equicord**
+```powershell
+git clone https://github.com/Equicord/Equicord.git
+cd Equicord
+```
+
+**Vencord**
+```powershell
+git clone https://github.com/Vendicated/Vencord.git
+cd Vencord
+```
+
+#### 6. Install dependencies and add StreamGuard
+
+Run these commands from inside the client folder:
+
+```powershell
+pnpm install --frozen-lockfile
+New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
+Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
+pnpm build
+```
+
+#### 7. Finish
+
+Follow the client project's instructions to install your rebuilt client:
+
+- [Equicord](https://github.com/Equicord/Equicord)
+- [Vencord](https://github.com/Vendicated/Vencord)
+
+Restart Discord and enable **StreamGuard** in Plugins.
+
+To update StreamGuard later, copy the four latest files into `src/userplugins/StreamGuard` and run `pnpm build` again.
+
 ## Use and reset
 
 1. **Before any live sharing**, manually disable/mute notifications and test using non-sensitive fake content with no audience or live stream. With StreamGuard enabled, enter `/streamguard` to toggle manual protection on. Inspect the sidebar, friends/activity sections, hidden chat, composer, overlay, and indicator. Try the context-menu actions and `/streamguard-panic`. This is only a smoke test, not proof that screenshares or screenshots are safe. If anything is unexpected, stop and do not share private content.
