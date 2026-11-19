@@ -64,23 +64,16 @@ The first build prepares the client. The installer opened by `pnpm inject` will 
 
 ### 3. Add StreamGuard
 
-Open PowerShell in your Vencord/Equicord source folder (the folder that contains `src`) and run this block. It downloads the ZIP, extracts it temporarily, and copies the four plugin files to the correct location automatically:
+1. Download the [StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip) and extract it.
+2. Open the extracted `streamguard-plugin-main` folder.
+3. In your Vencord/Equicord source folder, open `src/userplugins` and create a folder named `StreamGuard`.
+4. Copy these four files from `streamguard-plugin-main` into the new `StreamGuard` folder:
+   - `index.tsx`
+   - `logic.ts`
+   - `compat.ts`
+   - `styles.css`
 
-```powershell
-$Zip = Join-Path $env:TEMP "streamguard-plugin.zip"
-$Extract = Join-Path $env:TEMP "streamguard-plugin"
-$PluginSource = Join-Path $Extract "streamguard-plugin-main"
-$PluginTarget = Join-Path (Get-Location).Path "src\userplugins\StreamGuard"
-
-Invoke-WebRequest "https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip" -OutFile $Zip
-Expand-Archive -Path $Zip -DestinationPath $Extract -Force
-New-Item -ItemType Directory -Force -Path $PluginTarget | Out-Null
-Copy-Item "$PluginSource\index.tsx", "$PluginSource\logic.ts", "$PluginSource\compat.ts", "$PluginSource\styles.css" -Destination $PluginTarget -Force
-Remove-Item $Zip -Force
-Remove-Item $Extract -Recurse -Force
-```
-
-The files are placed here:
+Your folder should look like this:
 
 ```text
 src/userplugins/StreamGuard/
@@ -90,8 +83,7 @@ src/userplugins/StreamGuard/
 └── styles.css
 ```
 
-The temporary download is removed automatically. Do not put the ZIP's extracted folder inside `userplugins`; only the four files go inside `StreamGuard`.
-
+Do not copy the whole `streamguard-plugin-main` folder into `userplugins`.
 ### 4. Build and launch
 
 Open PowerShell in the Vencord/Equicord source folder and run:
