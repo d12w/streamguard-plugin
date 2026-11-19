@@ -1,0 +1,232 @@
+/*
+ * StreamGuard DOM contract
+ *
+ * body[data-vc-streamguard-active="true"]: the guard is engaged.
+ * body[data-vc-streamguard-hidden="true"]: the selected DM is hidden.
+ * body[data-vc-streamguard-servers="true"]: also obscure the server list.
+ *
+ * Mark only the relevant Discord section with data-vc-streamguard-scope:
+ *   dm-list     private channel list; each channel row gets
+ *               data-vc-streamguard-chat="hidden" or "revealed".
+ *               Only set data-vc-streamguard-ready="true" after every
+ *               rendered private-channel row has a correct chat marker.
+ *   chat        selected DM panel; mount the overlay as a direct child.
+ *               All other direct children are obscured while it is hidden.
+ *   composer    the input / editor for that panel (JS must also disable
+ *               keyboard input and provide a readable composer hint).
+ *   friends     friends list; the entire section is obscured.
+ *   active-now  activity sidebar; the entire section is obscured.
+ *   dm-members  group-DM member list; obscured for a hidden selected DM.
+ *   servers     server rail; obscured only when servers="true".
+ *
+ * Marking must happen before paint when possible and on every DOM update;
+ * selectors cannot protect DOM the controller fails to identify. If the
+ * dm-list mapping is incomplete, remove ready or leave it unset: the entire
+ * section will blur. Do not mount sensitive content inside the overlay/pill.
+ * No hover-to-reveal or animated transition is used on protected content.
+ */
+
+/* Unmapped private lists fail closed. Set ready only when every row has been
+ * classified; invalid marker values are treated as hidden. */
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="dm-list"]:not([data-vc-streamguard-ready="true"]),
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="dm-list"] [data-vc-streamguard-chat]:not([data-vc-streamguard-chat="revealed"]),
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="friends"],
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="active-now"],
+body[data-vc-streamguard-active="true"][data-vc-streamguard-servers="true"] [data-vc-streamguard-scope="servers"],
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="dm-members"] {
+    filter: blur(14px) !important;
+    transition: none !important;
+    user-select: none !important;
+}
+
+/* Blur the entire hidden chat subtree, not a guessed set of message classes:
+ * this includes title, replies, embeds, media, typing text and future content.
+ * The controller must put the overlay directly inside this marked section. */
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="chat"] {
+    position: relative;
+}
+
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="chat"] > :not(.vc-streamguard-overlay):not(.vc-streamguard-pill) {
+    filter: blur(14px) !important;
+    transition: none !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* Pointer suppression is defense in depth, not an accessible disabled state:
+ * JS must prevent keyboard submission and restore input state on reveal. */
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="composer"] {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+.vc-streamguard-pill {
+    align-items: center;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-subtle, var(--background-modifier-accent));
+    border-radius: 999px;
+    color: var(--text-normal);
+    display: inline-flex;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 6px;
+    line-height: 1;
+    padding: 7px 10px 7px 27px;
+    position: relative;
+    white-space: nowrap;
+}
+
+.vc-streamguard-pill::before,
+.vc-streamguard-pill::after {
+    box-sizing: border-box;
+    content: "";
+    left: 11px;
+    position: absolute;
+}
+
+.vc-streamguard-pill::before {
+    border: 1.5px solid currentColor;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    height: 5px;
+    left: 13px;
+    top: calc(50% - 7px);
+    width: 6px;
+}
+
+.vc-streamguard-pill::after {
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+    height: 8px;
+    top: calc(50% - 2px);
+    width: 10px;
+}
+
+button.vc-streamguard-pill {
+    cursor: pointer;
+}
+
+button.vc-streamguard-pill:hover,
+button.vc-streamguard-button-secondary:hover {
+    background: var(--background-modifier-hover);
+}
+
+.vc-streamguard-pill svg,
+.vc-streamguard-overlay-icon svg {
+    flex: none;
+}
+
+.vc-streamguard-overlay {
+    align-items: center;
+    background: var(--background-primary);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 24px;
+    position: absolute;
+    z-index: 5;
+}
+
+.vc-streamguard-overlay[hidden] {
+    display: none;
+}
+
+.vc-streamguard-overlay-card {
+    align-items: center;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-subtle, var(--background-modifier-accent));
+    border-radius: 12px;
+    box-shadow: var(--elevation-high);
+    box-sizing: border-box;
+    color: var(--text-normal);
+    display: flex;
+    flex-direction: column;
+    max-width: 360px;
+    padding: 25px 28px;
+    text-align: center;
+    width: 100%;
+}
+
+.vc-streamguard-overlay-icon {
+    align-items: center;
+    background: var(--background-tertiary);
+    border-radius: 50%;
+    color: var(--header-primary);
+    display: inline-flex;
+    height: 42px;
+    justify-content: center;
+    margin-bottom: 14px;
+    width: 42px;
+}
+
+.vc-streamguard-overlay-title {
+    color: var(--header-primary);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.vc-streamguard-overlay-description {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.45;
+    margin: 8px 0 0;
+}
+
+.vc-streamguard-overlay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.vc-streamguard-button {
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    min-height: 36px;
+    padding: 8px 14px;
+}
+
+.vc-streamguard-button-primary {
+    background: var(--brand-500);
+    color: var(--white-500);
+}
+
+.vc-streamguard-button-primary:hover {
+    background: var(--brand-560, var(--brand-experiment));
+}
+
+.vc-streamguard-button-secondary {
+    background: var(--background-tertiary);
+    color: var(--text-normal);
+}
+
+.vc-streamguard-button:focus-visible,
+.vc-streamguard-pill:focus-visible {
+    outline: 2px solid var(--text-link, var(--brand-500));
+    outline-offset: 2px;
+}
+
+.vc-streamguard-composer-hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+@media (max-width: 480px) {
+    .vc-streamguard-overlay {
+        padding: 12px;
+    }
+
+    .vc-streamguard-overlay-card {
+        padding: 20px 16px;
+    }
+}

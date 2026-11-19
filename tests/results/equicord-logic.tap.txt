@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: stream start activates automatic protection and conceals ordinary channels
+ok 1 - stream start activates automatic protection and conceals ordinary channels
+  ---
+  duration_ms: 3.481516
+  type: 'test'
+  ...
+# Subtest: automatic detection can be disabled without losing stream tracking
+ok 2 - automatic detection can be disabled without losing stream tracking
+  ---
+  duration_ms: 0.528873
+  type: 'test'
+  ...
+# Subtest: manual toggle works without streams, even with automatic detection disabled
+ok 3 - manual toggle works without streams, even with automatic detection disabled
+  ---
+  duration_ms: 0.258272
+  type: 'test'
+  ...
+# Subtest: 5m reveal expires exactly at its deadline
+ok 4 - 5m reveal expires exactly at its deadline
+  ---
+  duration_ms: 0.359182
+  type: 'test'
+  ...
+# Subtest: 15m reveal expires exactly at its deadline
+ok 5 - 15m reveal expires exactly at its deadline
+  ---
+  duration_ms: 0.279407
+  type: 'test'
+  ...
+# Subtest: 1h reveal expires exactly at its deadline
+ok 6 - 1h reveal expires exactly at its deadline
+  ---
+  duration_ms: 0.185214
+  type: 'test'
+  ...
+# Subtest: a new reveal replaces the old deadline for that channel
+ok 7 - a new reveal replaces the old deadline for that channel
+  ---
+  duration_ms: 0.328346
+  type: 'test'
+  ...
+# Subtest: until-streams-stop reveal requires a stream and survives partial stops
+ok 8 - until-streams-stop reveal requires a stream and survives partial stops
+  ---
+  duration_ms: 1.684719
+  type: 'test'
+  ...
+# Subtest: stream IDs are deduplicated; stopping one of multiple streams keeps protection on
+ok 9 - stream IDs are deduplicated; stopping one of multiple streams keeps protection on
+  ---
+  duration_ms: 0.631705
+  type: 'test'
+  ...
+# Subtest: timed reveal resets at the last stream stop, even before its deadline
+ok 10 - timed reveal resets at the last stream stop, even before its deadline
+  ---
+  duration_ms: 0.594766
+  type: 'test'
+  ...
+# Subtest: nothing mode displays a revealed chat without warning while streaming
+ok 11 - nothing mode displays a revealed chat without warning while streaming
+  ---
+  duration_ms: 0.271719
+  type: 'test'
+  ...
+# Subtest: warn mode conceals pending confirmation and binds approval to the context
+ok 12 - warn mode conceals pending confirmation and binds approval to the context
+  ---
+  duration_ms: 0.356555
+  type: 'test'
+  ...
+# Subtest: stop mode blocks and conceals until an authoritative snapshot confirms streams stopped
+ok 13 - stop mode blocks and conceals until an authoritative snapshot confirms streams stopped
+  ---
+  duration_ms: 0.345176
+  type: 'test'
+  ...
+# Subtest: warning or stop is unnecessary without an active stream, even with manual protection
+ok 14 - warning or stop is unnecessary without an active stream, even with manual protection
+  ---
+  duration_ms: 0.174364
+  type: 'test'
+  ...
+# Subtest: removing a temporary reveal does not remove a persistent allowlist entry
+ok 15 - removing a temporary reveal does not remove a persistent allowlist entry
+  ---
+  duration_ms: 0.234378
+  type: 'test'
+  ...
+# Subtest: removing allowlist does not remove a temporary reveal; allowlisted opens use safety mode
+ok 16 - removing allowlist does not remove a temporary reveal; allowlisted opens use safety mode
+  ---
+  duration_ms: 0.18067
+  type: 'test'
+  ...
+# Subtest: panic hides ALL channels, overrides the allowlist, clears reveals, and is latched
+ok 17 - panic hides ALL channels, overrides the allowlist, clears reveals, and is latched
+  ---
+  duration_ms: 0.191884
+  type: 'test'
+  ...
+# Subtest: panic while not streaming still protects; clearing panic leaves manual on
+ok 18 - panic while not streaming still protects; clearing panic leaves manual on
+  ---
+  duration_ms: 0.136631
+  type: 'test'
+  ...
+# Subtest: account switch drops account-specific data and loads only new account snapshot/list
+ok 19 - account switch drops account-specific data and loads only new account snapshot/list
+  ---
+  duration_ms: 0.309298
+  type: 'test'
+  ...
+# Subtest: reload reconciles stream snapshots, expiration, and authoritative loaded allowlist
+ok 20 - reload reconciles stream snapshots, expiration, and authoritative loaded allowlist
+  ---
+  duration_ms: 0.359528
+  type: 'test'
+  ...
+# Subtest: reload without overlapping stream ID revokes session reveals conservatively
+ok 21 - reload without overlapping stream ID revokes session reveals conservatively
+  ---
+  duration_ms: 0.210971
+  type: 'test'
+  ...
+# Subtest: reload with a different account does not inherit old account exceptions or panic
+ok 22 - reload with a different account does not inherit old account exceptions or panic
+  ---
+  duration_ms: 0.185915
+  type: 'test'
+  ...
+# Subtest: fail-safe hides and blocks even allowlisted channels until explicit recovery
+ok 23 - fail-safe hides and blocks even allowlisted channels until explicit recovery
+  ---
+  duration_ms: 0.198403
+  type: 'test'
+  ...
+# Subtest: corrupt persisted state, bad runtime inputs, and backwards time fail closed
+ok 24 - corrupt persisted state, bad runtime inputs, and backwards time fail closed
+  ---
+  duration_ms: 0.190018
+  type: 'test'
+  ...
+# Subtest: transitions, decisions and restoration do not mutate frozen inputs
+ok 25 - transitions, decisions and restoration do not mutate frozen inputs
+  ---
+  duration_ms: 0.304635
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 204.028262

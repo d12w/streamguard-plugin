@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: own stream protects entire mock surfaces; warning, panic, end and restart
+ok 1 - own stream protects entire mock surfaces; warning, panic, end and restart
+  ---
+  duration_ms: 2491.877157
+  type: 'test'
+  ...
+# Subtest: unknown account starts protected, then refreshes when the account becomes known
+ok 2 - unknown account starts protected, then refreshes when the account becomes known
+  ---
+  duration_ms: 472.404038
+  type: 'test'
+  ...
+# Subtest: bad snapshot starts protected and latches fail-safe despite a later empty snapshot
+ok 3 - bad snapshot starts protected and latches fail-safe despite a later empty snapshot
+  ---
+  duration_ms: 595.332431
+  type: 'test'
+  ...
+# Subtest: invalid stream snapshot cannot reconcile away a known active stream
+ok 4 - invalid stream snapshot cannot reconcile away a known active stream
+  ---
+  duration_ms: 584.113057
+  type: 'test'
+  ...
+# Subtest: missing stop action and notification suppression warn without exposing the mock chat
+ok 5 - missing stop action and notification suppression warn without exposing the mock chat
+  ---
+  duration_ms: 457.353686
+  type: 'test'
+  ...
+# Subtest: missing stylesheet triggers fail-safe, stop request, and latched concealment
+ok 6 - missing stylesheet triggers fail-safe, stop request, and latched concealment
+  ---
+  duration_ms: 734.568451
+  type: 'test'
+  ...
+# Subtest: repeated start/stop restores DOM, listeners, input, and leaves no observer/render loop
+ok 7 - repeated start/stop restores DOM, listeners, input, and leaves no observer/render loop
+  ---
+  duration_ms: 1711.778055
+  type: 'test'
+  ...
+# Subtest: new mock chat content is protected and temporary typing override is restored
+ok 8 - new mock chat content is protected and temporary typing override is restored
+  ---
+  duration_ms: 478.516182
+  type: 'test'
+  ...
+# Subtest: context-menu actions and changed blur settings operate through real plugin hooks
+ok 9 - context-menu actions and changed blur settings operate through real plugin hooks
+  ---
+  duration_ms: 727.477478
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8695.605381

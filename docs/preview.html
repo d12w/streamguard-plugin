@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>StreamGuard — visual preview</title>
+<style>
+/* Production stylesheet is embedded below to keep this preview offline. */
+/*
+ * StreamGuard DOM contract
+ *
+ * body[data-vc-streamguard-active="true"]: the guard is engaged.
+ * body[data-vc-streamguard-hidden="true"]: the selected DM is hidden.
+ * body[data-vc-streamguard-servers="true"]: also obscure the server list.
+ *
+ * Mark only the relevant Discord section with data-vc-streamguard-scope:
+ *   dm-list     private channel list; each channel row gets
+ *               data-vc-streamguard-chat="hidden" or "revealed".
+ *               Only set data-vc-streamguard-ready="true" after every
+ *               rendered private-channel row has a correct chat marker.
+ *   chat        selected DM panel; mount the overlay as a direct child.
+ *               All other direct children are obscured while it is hidden.
+ *   composer    the input / editor for that panel (JS must also disable
+ *               keyboard input and provide a readable composer hint).
+ *   friends     friends list; the entire section is obscured.
+ *   active-now  activity sidebar; the entire section is obscured.
+ *   dm-members  group-DM member list; obscured for a hidden selected DM.
+ *   servers     server rail; obscured only when servers="true".
+ *
+ * Marking must happen before paint when possible and on every DOM update;
+ * selectors cannot protect DOM the controller fails to identify. If the
+ * dm-list mapping is incomplete, remove ready or leave it unset: the entire
+ * section will blur. Do not mount sensitive content inside the overlay/pill.
+ * No hover-to-reveal or animated transition is used on protected content.
+ */
+
+/* Unmapped private lists fail closed. Set ready only when every row has been
+ * classified; invalid marker values are treated as hidden. */
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="dm-list"]:not([data-vc-streamguard-ready="true"]),
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="dm-list"] [data-vc-streamguard-chat]:not([data-vc-streamguard-chat="revealed"]),
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="friends"],
+body[data-vc-streamguard-active="true"] [data-vc-streamguard-scope="active-now"],
+body[data-vc-streamguard-active="true"][data-vc-streamguard-servers="true"] [data-vc-streamguard-scope="servers"],
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="dm-members"] {
+    filter: blur(14px) !important;
+    transition: none !important;
+    user-select: none !important;
+}
+
+/* Blur the entire hidden chat subtree, not a guessed set of message classes:
+ * this includes title, replies, embeds, media, typing text and future content.
+ * The controller must put the overlay directly inside this marked section. */
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="chat"] {
+    position: relative;
+}
+
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="chat"] > :not(.vc-streamguard-overlay):not(.vc-streamguard-pill) {
+    filter: blur(14px) !important;
+    transition: none !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* Pointer suppression is defense in depth, not an accessible disabled state:
+ * JS must prevent keyboard submission and restore input state on reveal. */
+body[data-vc-streamguard-active="true"][data-vc-streamguard-hidden="true"] [data-vc-streamguard-scope="composer"] {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+.vc-streamguard-pill {
+    align-items: center;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-subtle, var(--background-modifier-accent));
+    border-radius: 999px;
+    color: var(--text-normal);
+    display: inline-flex;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 6px;
+    line-height: 1;
+    padding: 7px 10px 7px 27px;
+    position: relative;
+    white-space: nowrap;
+}
+
+.vc-streamguard-pill::before,
+.vc-streamguard-pill::after {
+    box-sizing: border-box;
+    content: "";
+    left: 11px;
+    position: absolute;
+}
+
+.vc-streamguard-pill::before {
+    border: 1.5px solid currentColor;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    height: 5px;
+    left: 13px;
+    top: calc(50% - 7px);
+    width: 6px;
+}
+
+.vc-streamguard-pill::after {
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+    height: 8px;
+    top: calc(50% - 2px);
+    width: 10px;
+}
+
+button.vc-streamguard-pill {
+    cursor: pointer;
+}
+
+button.vc-streamguard-pill:hover,
+button.vc-streamguard-button-secondary:hover {
+    background: var(--background-modifier-hover);
+}
+
+.vc-streamguard-pill svg,
+.vc-streamguard-overlay-icon svg {
+    flex: none;
+}
+
+.vc-streamguard-overlay {
+    align-items: center;
+    background: var(--background-primary);
+    background: color-mix(in srgb, var(--background-primary) 35%, transparent);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 24px;
+    position: absolute;
+    z-index: 5;
+}
+
+.vc-streamguard-overlay[hidden] {
+    display: none;
+}
+
+.vc-streamguard-overlay-card {
+    align-items: center;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-subtle, var(--background-modifier-accent));
+    border-radius: 12px;
+    box-shadow: var(--elevation-high);
+    box-sizing: border-box;
+    color: var(--text-normal);
+    display: flex;
+    flex-direction: column;
+    max-width: 360px;
+    padding: 25px 28px;
+    text-align: center;
+    width: 100%;
+}
+
+.vc-streamguard-overlay-icon {
+    align-items: center;
+    background: var(--background-tertiary);
+    border-radius: 50%;
+    color: var(--header-primary);
+    display: inline-flex;
+    height: 42px;
+    justify-content: center;
+    margin-bottom: 14px;
+    width: 42px;
+}
+
+.vc-streamguard-overlay-title {
+    color: var(--header-primary);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.vc-streamguard-overlay-description {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.45;
+    margin: 8px 0 0;
+}
+
+.vc-streamguard-overlay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.vc-streamguard-button {
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    min-height: 36px;
+    padding: 8px 14px;
+}
+
+.vc-streamguard-button-primary {
+    background: var(--brand-500);
+    color: var(--white-500);
+}
+
+.vc-streamguard-button-primary:hover {
+    background: var(--brand-560, var(--brand-experiment));
+}
+
+.vc-streamguard-button-secondary {
+    background: var(--background-tertiary);
+    color: var(--text-normal);
+}
+
+.vc-streamguard-button:focus-visible,
+.vc-streamguard-pill:focus-visible {
+    outline: 2px solid var(--text-link, var(--brand-500));
+    outline-offset: 2px;
+}
+
+.vc-streamguard-composer-hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+@media (max-width: 480px) {
+    .vc-streamguard-overlay {
+        padding: 12px;
+    }
+
+    .vc-streamguard-overlay-card {
+        padding: 20px 16px;
+    }
+}
+</style>
+<style>
+/* Mock-only theme tokens: no network, fonts, images, or telemetry. */
+:root {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --background-primary: #313338;
+    --background-secondary: #2b2d31;
+    --background-tertiary: #1e1f22;
+    --background-modifier-hover: #404249;
+    --background-modifier-accent: #41434a;
+    --border-subtle: #41434a;
+    --text-normal: #dbdee1;
+    --text-muted: #a5acb5;
+    --header-primary: #f2f3f5;
+    --interactive-normal: #b5bac1;
+    --brand-500: #5865f2;
+    --brand-560: #4752c4;
+    --text-link: #00a8fc;
+    --white-500: #fff;
+    --status-danger: #f23f43;
+    --elevation-high: 0 8px 28px #0006;
+    --vc-streamguard-page: #17181c;
+    --vc-streamguard-page-card: #22242a;
+    --vc-streamguard-green: #43b581;
+    --vc-streamguard-gold: #f0b232;
+    --vc-streamguard-avatar-purple: #6859b8;
+    --vc-streamguard-avatar-coral: #c8766f;
+    --vc-streamguard-avatar-teal: #32988a;
+    --vc-streamguard-avatar-blue: #5078aa;
+}
+body.vc-streamguard-theme-light {
+    color-scheme: light;
+    --background-primary: #fff;
+    --background-secondary: #f2f3f5;
+    --background-tertiary: #e3e5e8;
+    --background-modifier-hover: #e3e5e8;
+    --background-modifier-accent: #d5d7dc;
+    --border-subtle: #d5d7dc;
+    --text-normal: #313338;
+    --text-muted: #626873;
+    --header-primary: #060607;
+    --interactive-normal: #5c6067;
+    --elevation-high: 0 8px 28px #0002;
+    --vc-streamguard-page: #e7e9ee;
+    --vc-streamguard-page-card: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--vc-streamguard-page); color: var(--text-normal); }
+button { font: inherit; }
+.vc-streamguard-page { max-width: 1512px; padding: 30px 42px 44px; margin: 0 auto; }
+.vc-streamguard-preview-heading { align-items: flex-end; display: flex; justify-content: space-between; gap: 20px; margin-bottom: 19px; }
+.vc-streamguard-eyebrow { align-items: center; color: var(--text-muted); display: flex; font-size: 11px; font-weight: 750; gap: 8px; letter-spacing: .11em; text-transform: uppercase; }
+.vc-streamguard-eyebrow-dot { background: var(--vc-streamguard-green); border-radius: 50%; height: 7px; width: 7px; }
+.vc-streamguard-page-title { color: var(--header-primary); font-size: 25px; letter-spacing: -.035em; margin: 6px 0 3px; }
+.vc-streamguard-page-subtitle { color: var(--text-muted); font-size: 13px; margin: 0; }
+.vc-streamguard-theme-toggle { background: var(--background-secondary); border: 1px solid var(--border-subtle); border-radius: 7px; color: var(--text-normal); cursor: pointer; padding: 9px 12px; white-space: nowrap; font-size: 12px; font-weight: 600; }
+.vc-streamguard-theme-toggle:hover { background: var(--background-modifier-hover); }
+.vc-streamguard-notice { background: var(--vc-streamguard-page-card); border: 1px solid var(--border-subtle); border-left: 3px solid var(--vc-streamguard-gold); border-radius: 7px; color: var(--text-normal); font-size: 12px; line-height: 1.5; margin-bottom: 17px; padding: 10px 14px; }
+.vc-streamguard-notice strong { color: var(--vc-streamguard-gold); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.vc-streamguard-notice p { margin: 3px 0 0; }
+.vc-streamguard-window { background: var(--background-primary); border: 1px solid var(--border-subtle); border-radius: 11px; box-shadow: var(--elevation-high); display: grid; grid-template-columns: 72px 230px minmax(0, 1fr) 205px; height: 670px; overflow: hidden; position: relative; }
+.vc-streamguard-rail { align-items: center; background: var(--background-tertiary); display: flex; flex-direction: column; gap: 10px; padding: 13px 0; }
+.vc-streamguard-rail-icon { align-items: center; background: var(--background-secondary); border-radius: 16px; color: var(--text-normal); display: flex; font-size: 15px; font-weight: 700; height: 46px; justify-content: center; width: 46px; }
+.vc-streamguard-rail-home { background: var(--brand-500); color: var(--white-500); border-radius: 15px; }
+.vc-streamguard-rail-add { color: var(--vc-streamguard-green); font-size: 24px; font-weight: 400; }
+.vc-streamguard-rail-divider { background: var(--border-subtle); border-radius: 2px; height: 2px; width: 32px; }
+.vc-streamguard-sidebar { background: var(--background-secondary); display: flex; flex-direction: column; min-width: 0; }
+.vc-streamguard-search { border-bottom: 1px solid var(--background-tertiary); height: 50px; padding: 10px 11px; }
+.vc-streamguard-search-box { background: var(--background-tertiary); border-radius: 5px; color: var(--text-muted); font-size: 12px; padding: 8px; }
+.vc-streamguard-sidebar-body { flex: 1; padding: 9px 8px; }
+.vc-streamguard-nav-row { align-items: center; border-radius: 5px; color: var(--interactive-normal); display: flex; font-size: 15px; font-weight: 600; gap: 12px; height: 42px; padding: 0 10px; }
+.vc-streamguard-nav-row svg { flex: none; }
+.vc-streamguard-nav-active { background: var(--background-modifier-hover); color: var(--header-primary); }
+.vc-streamguard-section-title { align-items: center; color: var(--text-muted); display: flex; font-size: 11px; font-weight: 700; justify-content: space-between; letter-spacing: .02em; margin: 23px 10px 10px; text-transform: uppercase; }
+.vc-streamguard-dm { align-items: center; border-radius: 5px; display: flex; gap: 10px; height: 48px; padding: 4px 10px; }
+.vc-streamguard-dm-selected { background: var(--background-modifier-hover); }
+.vc-streamguard-avatar { align-items: center; background: var(--vc-streamguard-avatar-purple); border-radius: 50%; color: var(--white-500); display: flex; flex: none; font-size: 13px; font-weight: 700; height: 32px; justify-content: center; position: relative; width: 32px; }
+.vc-streamguard-avatar-coral { background: var(--vc-streamguard-avatar-coral); }
+.vc-streamguard-avatar-teal { background: var(--vc-streamguard-avatar-teal); }
+.vc-streamguard-avatar-blue { background: var(--vc-streamguard-avatar-blue); }
+.vc-streamguard-avatar::after { background: var(--vc-streamguard-green); border: 2px solid var(--background-secondary); border-radius: 50%; bottom: -1px; content: ""; height: 8px; position: absolute; right: -1px; width: 8px; }
+.vc-streamguard-dm-text { color: var(--text-normal); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vc-streamguard-visible-tag { color: var(--vc-streamguard-green); font-size: 10px; font-weight: 700; margin-left: auto; }
+.vc-streamguard-user-panel { align-items: center; background: var(--background-tertiary); display: flex; gap: 9px; height: 56px; padding: 0 10px; }
+.vc-streamguard-user-panel .vc-streamguard-avatar { height: 31px; width: 31px; }
+.vc-streamguard-user-panel strong { color: var(--header-primary); display: block; font-size: 12px; }
+.vc-streamguard-user-panel small { color: var(--text-muted); display: block; font-size: 11px; margin-top: 2px; }
+.vc-streamguard-user-icons { color: var(--interactive-normal); font-size: 17px; letter-spacing: 3px; margin-left: auto; }
+.vc-streamguard-chat { display: flex; flex-direction: column; min-width: 0; overflow: hidden; position: relative; }
+.vc-streamguard-chat-bar { align-items: center; border-bottom: 1px solid var(--background-modifier-accent); display: flex; flex: none; gap: 9px; height: 50px; padding: 0 18px; }
+.vc-streamguard-at { color: var(--text-muted); font-size: 24px; font-weight: 400; line-height: 1; }
+.vc-streamguard-chat-bar strong { color: var(--header-primary); font-size: 15px; }
+.vc-streamguard-bar-tools { color: var(--interactive-normal); font-size: 18px; letter-spacing: 10px; margin-left: auto; white-space: nowrap; }
+.vc-streamguard-chat-messages { flex: 1; overflow: hidden; padding: 44px 22px 12px; }
+.vc-streamguard-date { align-items: center; color: var(--text-muted); display: flex; font-size: 11px; font-weight: 700; gap: 8px; justify-content: center; margin-bottom: 30px; }
+.vc-streamguard-date::before, .vc-streamguard-date::after { background: var(--border-subtle); content: ""; flex: 1; height: 1px; }
+.vc-streamguard-message { display: flex; gap: 14px; margin: 0 0 25px; }
+.vc-streamguard-message .vc-streamguard-avatar { height: 40px; width: 40px; }
+.vc-streamguard-message-body { font-size: 14px; line-height: 1.5; min-width: 0; }
+.vc-streamguard-message-body strong { color: var(--header-primary); font-size: 14px; }
+.vc-streamguard-message-body time { color: var(--text-muted); font-size: 11px; margin-left: 7px; }
+.vc-streamguard-message-body p { margin: 3px 0 0; }
+.vc-streamguard-reply { border-left: 2px solid var(--interactive-normal); color: var(--text-muted); font-size: 12px; margin: 0 0 6px; padding-left: 8px; }
+.vc-streamguard-mock-media { background: var(--background-tertiary); border-radius: 8px; height: 92px; margin-top: 10px; padding: 25px; width: 210px; }
+.vc-streamguard-composer { padding: 0 18px 22px; }
+.vc-streamguard-composer-box { align-items: center; background: var(--background-modifier-hover); border-radius: 8px; color: var(--text-muted); display: flex; font-size: 14px; height: 45px; padding: 0 15px; }
+.vc-streamguard-composer-plus { color: var(--text-normal); font-size: 23px; margin-right: 15px; }
+.vc-streamguard-mock-pill { bottom: 14px; box-shadow: var(--elevation-high); max-width: calc(100% - 28px); padding-right: 5px; position: absolute; right: 14px; z-index: 6; }
+.vc-streamguard-mock-pill .vc-streamguard-button { font-size: 11px; min-height: 27px; padding: 3px 8px; }
+.vc-streamguard-people { background: var(--background-secondary); overflow: hidden; padding: 19px 12px; }
+.vc-streamguard-people-title { color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .03em; margin: 5px 6px 14px; text-transform: uppercase; }
+.vc-streamguard-member { align-items: center; display: flex; gap: 9px; height: 43px; padding: 4px 6px; }
+.vc-streamguard-member span:last-child { font-size: 13px; font-weight: 600; }
+.vc-streamguard-details { display: grid; gap: 14px; grid-template-columns: 1fr 1fr 1.2fr; margin-top: 18px; }
+.vc-streamguard-detail { background: var(--vc-streamguard-page-card); border: 1px solid var(--border-subtle); border-radius: 9px; min-height: 166px; overflow: hidden; padding: 15px 17px; }
+.vc-streamguard-detail-label { color: var(--text-muted); font-size: 10px; font-weight: 750; letter-spacing: .08em; margin: 0 0 12px; text-transform: uppercase; }
+.vc-streamguard-detail-title { color: var(--header-primary); font-size: 13px; font-weight: 700; margin: 0 0 11px; }
+.vc-streamguard-mini-row { align-items: center; display: flex; gap: 10px; margin: 8px 0; }
+.vc-streamguard-mini-row strong { color: var(--text-normal); display: block; font-size: 12px; }
+.vc-streamguard-mini-row small { color: var(--text-muted); display: block; font-size: 11px; margin-top: 3px; }
+.vc-streamguard-warning { background: var(--background-secondary); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px 14px; }
+.vc-streamguard-warning strong { color: var(--header-primary); font-size: 14px; }
+.vc-streamguard-warning p { color: var(--text-muted); font-size: 12px; line-height: 1.45; margin: 7px 0 9px; }
+.vc-streamguard-warning-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.vc-streamguard-warning-actions .vc-streamguard-button { font-size: 12px; min-height: 28px; padding: 4px 10px; }
+.vc-streamguard-button-danger { background: #b83237; color: #fff; }
+.vc-streamguard-button-danger:hover { background: #9c292e; }
+.vc-streamguard-caption { color: var(--text-muted); font-size: 11px; line-height: 1.5; margin: 14px 1px 0; }
+.vc-streamguard-dialog { background: var(--background-secondary); border: 1px solid var(--border-subtle); border-radius: 9px; box-shadow: var(--elevation-high); color: var(--text-normal); max-width: min(420px, calc(100vw - 32px)); padding: 22px; }
+.vc-streamguard-dialog::backdrop { background: #0009; }
+.vc-streamguard-dialog h2 { color: var(--header-primary); font-size: 18px; margin: 0 0 10px; }
+.vc-streamguard-dialog p { color: var(--text-muted); font-size: 14px; line-height: 1.5; margin: 0 0 20px; }
+.vc-streamguard-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+@media (max-width: 950px) { .vc-streamguard-page { padding: 22px; } .vc-streamguard-window { grid-template-columns: 60px 210px minmax(0, 1fr); } .vc-streamguard-people { display: none; } .vc-streamguard-details { grid-template-columns: 1fr 1fr; } .vc-streamguard-detail:last-child { grid-column: 1 / -1; } }
+@media (max-width: 620px) { .vc-streamguard-page { padding: 15px; } .vc-streamguard-window { grid-template-columns: 54px minmax(0, 1fr); height: 600px; } .vc-streamguard-sidebar { display: none; } .vc-streamguard-rail-icon { width: 38px; height: 38px; } .vc-streamguard-page-title { font-size: 21px; } .vc-streamguard-details { grid-template-columns: 1fr; } .vc-streamguard-detail:last-child { grid-column: auto; } .vc-streamguard-chat-messages { padding: 35px 14px; } }
+@media (max-width: 370px) { .vc-streamguard-mock-pill { border-radius: 12px; flex-wrap: wrap; justify-content: center; } }
+</style>
+</head>
+<body data-vc-streamguard-active="true" data-vc-streamguard-hidden="true" data-vc-streamguard-servers="false">
+<main class="vc-streamguard-page">
+    <header class="vc-streamguard-preview-heading">
+        <div>
+            <div class="vc-streamguard-eyebrow"><span class="vc-streamguard-eyebrow-dot"></span> Plugin interface preview</div>
+            <h1 class="vc-streamguard-page-title">StreamGuard</h1>
+            <p class="vc-streamguard-page-subtitle">A quieter, safer view for sharing your screen.</p>
+        </div>
+        <button class="vc-streamguard-theme-toggle" type="button" aria-label="Switch between dark and light themes">Switch to light theme</button>
+    </header>
+    <div class="vc-streamguard-notice"><strong>Idealized preview · important sidebar limitation</strong><p>The visible DM row is illustrative only. The current implementation deliberately keeps the entire DM sidebar blurred, even for revealed chats. All names and actions are mock; no live stream is controlled.</p></div>
+    <section class="vc-streamguard-window" aria-label="Illustrative Discord interface">
+        <nav class="vc-streamguard-rail" data-vc-streamguard-scope="servers" aria-label="Example server list">
+            <div class="vc-streamguard-rail-icon vc-streamguard-rail-home" aria-label="Home"><svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.7 5.3A18 18 0 0 0 15.3 4l-.5 1.1a17 17 0 0 0-5.6 0L8.7 4A18 18 0 0 0 4.3 5.3C1.5 9.4.8 13.5 1.2 17.5a18 18 0 0 0 5.4 2.7l1.1-1.8a12 12 0 0 1-1.7-.8l.4-.3c3.6 1.7 7.6 1.7 11.2 0l.4.3a12 12 0 0 1-1.7.8l1.1 1.8a18 18 0 0 0 5.4-2.7c.5-4.7-.8-8.7-3.1-12.2ZM8.6 15.2c-1.1 0-2-1-2-2.3 0-1.2.9-2.2 2-2.2s2 1 2 2.2c0 1.3-.9 2.3-2 2.3Zm6.8 0c-1.1 0-2-1-2-2.3 0-1.2.9-2.2 2-2.2s2 1 2 2.2c0 1.3-.9 2.3-2 2.3Z"/></svg></div>
+            <div class="vc-streamguard-rail-divider"></div>
+            <div class="vc-streamguard-rail-icon">W</div><div class="vc-streamguard-rail-icon">✦</div><div class="vc-streamguard-rail-icon">G</div><div class="vc-streamguard-rail-icon vc-streamguard-rail-add">+</div>
+        </nav>
+        <aside class="vc-streamguard-sidebar">
+            <div class="vc-streamguard-search"><div class="vc-streamguard-search-box">Find or start a conversation</div></div>
+            <div class="vc-streamguard-sidebar-body">
+                <div class="vc-streamguard-nav-row vc-streamguard-nav-active"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM8 14c-3.3 0-6 1.6-6 3.5V20h12v-2.5C14 15.6 11.3 14 8 14Zm8-1c-.8 0-1.5.1-2.2.3 1.3 1 2.2 2.4 2.2 4.2V20h6v-2.5c0-2.5-2.7-4.5-6-4.5Z"/></svg>Friends</div>
+                <div class="vc-streamguard-nav-row"><span aria-hidden="true">◉</span>Nitro</div>
+                <div class="vc-streamguard-section-title"><span>Direct messages</span><span>+</span></div>
+                <div data-vc-streamguard-scope="dm-list" data-vc-streamguard-ready="true">
+                    <div class="vc-streamguard-dm vc-streamguard-dm-selected" data-vc-streamguard-chat="hidden"><span class="vc-streamguard-avatar vc-streamguard-avatar-coral">JL</span><span class="vc-streamguard-dm-text">Jordan Lee</span></div>
+                    <div class="vc-streamguard-dm" data-vc-streamguard-chat="revealed"><span class="vc-streamguard-avatar vc-streamguard-avatar-teal">AM</span><span class="vc-streamguard-dm-text">Avery Morgan</span><span class="vc-streamguard-visible-tag">MOCK</span></div>
+                    <div class="vc-streamguard-dm" data-vc-streamguard-chat="hidden"><span class="vc-streamguard-avatar vc-streamguard-avatar-blue">SK</span><span class="vc-streamguard-dm-text">Sam Kim</span></div>
+                    <div class="vc-streamguard-dm" data-vc-streamguard-chat="hidden"><span class="vc-streamguard-avatar">CC</span><span class="vc-streamguard-dm-text">Creative Circle</span></div>
+                </div>
+            </div>
+            <div class="vc-streamguard-user-panel"><span class="vc-streamguard-avatar vc-streamguard-avatar-blue">Y</span><span><strong>You</strong><small>Online</small></span><span class="vc-streamguard-user-icons" aria-hidden="true">⌁ ⚙</span></div>
+        </aside>
+        <section class="vc-streamguard-chat" data-vc-streamguard-scope="chat" aria-label="Example hidden DM">
+            <div class="vc-streamguard-chat-bar"><span class="vc-streamguard-at">@</span><strong>Jordan Lee</strong><span class="vc-streamguard-bar-tools" aria-hidden="true">⌕ ☰ ⋯</span></div>
+            <div class="vc-streamguard-chat-messages">
+                <div class="vc-streamguard-date">November 19, 2026</div>
+                <div class="vc-streamguard-message"><span class="vc-streamguard-avatar vc-streamguard-avatar-coral">JL</span><div class="vc-streamguard-message-body"><strong>Jordan Lee</strong><time>10:42 AM</time><p>Hey! I sent you the details for the project.</p><div class="vc-streamguard-mock-media">Private attachment preview</div></div></div>
+                <div class="vc-streamguard-message"><span class="vc-streamguard-avatar vc-streamguard-avatar-blue">Y</span><div class="vc-streamguard-message-body"><div class="vc-streamguard-reply">Jordan Lee: I sent you the details for the project.</div><strong>You</strong><time>10:48 AM</time><p>Thanks, I'll take a look this afternoon.</p></div></div>
+                <div class="vc-streamguard-message"><span class="vc-streamguard-avatar vc-streamguard-avatar-coral">JL</span><div class="vc-streamguard-message-body"><strong>Jordan Lee</strong><time>10:51 AM</time><p>Perfect, talk soon!</p></div></div>
+            </div>
+            <div class="vc-streamguard-composer" data-vc-streamguard-scope="composer"><div class="vc-streamguard-composer-box"><span class="vc-streamguard-composer-plus">⊕</span>Message @Jordan Lee</div></div>
+            <div class="vc-streamguard-overlay" aria-label="Hidden conversation notice">
+                <div class="vc-streamguard-overlay-card">
+                    <span class="vc-streamguard-overlay-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg></span>
+                    <h2 class="vc-streamguard-overlay-title">Hidden from viewers</h2>
+                    <p class="vc-streamguard-composer-hint">Typing is disabled while this chat is hidden.</p>
+                    <div class="vc-streamguard-overlay-actions"><button type="button" class="vc-streamguard-button vc-streamguard-button-primary vc-streamguard-open-dialog">Reveal chat</button></div>
+                </div>
+            </div>
+        </section>
+        <aside class="vc-streamguard-people" data-vc-streamguard-scope="dm-members" aria-label="Example DM members">
+            <div class="vc-streamguard-people-title">Members — 3</div><div class="vc-streamguard-member"><span class="vc-streamguard-avatar vc-streamguard-avatar-coral">JL</span><span>Jordan Lee</span></div><div class="vc-streamguard-member"><span class="vc-streamguard-avatar vc-streamguard-avatar-teal">AM</span><span>Avery Morgan</span></div><div class="vc-streamguard-member"><span class="vc-streamguard-avatar vc-streamguard-avatar-blue">Y</span><span>You</span></div>
+        </aside>
+        <div class="vc-streamguard-pill vc-streamguard-mock-pill"><span>StreamGuard active, 1 revealed</span><button type="button" class="vc-streamguard-button vc-streamguard-button-secondary vc-streamguard-hide-all">Hide all again</button></div>
+    </section>
+    <div class="vc-streamguard-details">
+        <section class="vc-streamguard-detail" aria-label="Friends privacy example"><p class="vc-streamguard-detail-label">Also protected · friends</p><div data-vc-streamguard-scope="friends"><p class="vc-streamguard-detail-title">Online friends</p><div class="vc-streamguard-mini-row"><span class="vc-streamguard-avatar vc-streamguard-avatar-coral">JL</span><span><strong>Jordan Lee</strong><small>Online</small></span></div><div class="vc-streamguard-mini-row"><span class="vc-streamguard-avatar vc-streamguard-avatar-blue">SK</span><span><strong>Sam Kim</strong><small>Playing a game</small></span></div></div></section>
+        <section class="vc-streamguard-detail" aria-label="Active Now privacy example"><p class="vc-streamguard-detail-label">Also protected · active now</p><div data-vc-streamguard-scope="active-now"><p class="vc-streamguard-detail-title">Active Now</p><div class="vc-streamguard-mini-row"><span class="vc-streamguard-avatar vc-streamguard-avatar-teal">AM</span><span><strong>Avery Morgan</strong><small>Listening to music</small></span></div><div class="vc-streamguard-mini-row"><span class="vc-streamguard-avatar">CC</span><span><strong>Creative Circle</strong><small>In a voice channel</small></span></div></div></section>
+        <section class="vc-streamguard-detail"><p class="vc-streamguard-detail-label">Reopening a revealed chat · example</p><div class="vc-streamguard-warning" role="group" aria-labelledby="vc-streamguard-warning-title" aria-describedby="vc-streamguard-warning-description"><strong id="vc-streamguard-warning-title">Viewers will see this chat.</strong><p id="vc-streamguard-warning-description">Example warning when opening a revealed chat during a share.</p><div class="vc-streamguard-warning-actions"><button class="vc-streamguard-button vc-streamguard-button-primary vc-streamguard-continue" type="button">Continue</button><button class="vc-streamguard-button vc-streamguard-button-secondary vc-streamguard-hide-chat" type="button">Hide chat</button><button class="vc-streamguard-button vc-streamguard-button-danger vc-streamguard-stop-sharing" type="button">Stop sharing</button></div></div></section>
+    </div>
+    <p class="vc-streamguard-caption">Preview uses invented names and local mock data. Test protection on your own client before streaming; blur is not a substitute for closing sensitive content. <span class="vc-streamguard-feedback" role="status" aria-live="polite"></span></p>
+</main>
+<dialog class="vc-streamguard-dialog" aria-labelledby="vc-streamguard-dialog-title" aria-describedby="vc-streamguard-dialog-description">
+    <h2 id="vc-streamguard-dialog-title">Viewers will see this chat.</h2><p id="vc-streamguard-dialog-description">This is a simulated warning. Continuing reveals mock content in this preview only.</p>
+    <div class="vc-streamguard-dialog-actions"><button class="vc-streamguard-button vc-streamguard-button-primary vc-streamguard-continue" type="button">Continue</button><button class="vc-streamguard-button vc-streamguard-button-secondary vc-streamguard-hide-chat" type="button">Hide chat</button><button class="vc-streamguard-button vc-streamguard-button-danger vc-streamguard-stop-sharing" type="button">Stop sharing</button></div>
+</dialog>
+<script>
+(() => {
+    const body = document.body;
+    const themeButton = document.querySelector('.vc-streamguard-theme-toggle');
+    const dialog = document.querySelector('.vc-streamguard-dialog');
+    const overlay = document.querySelector('.vc-streamguard-overlay');
+    const pill = document.querySelector('.vc-streamguard-mock-pill span');
+    const selectedRow = document.querySelector('.vc-streamguard-dm-selected');
+    const rows = [...document.querySelectorAll('[data-vc-streamguard-chat]')];
+    const feedback = document.querySelector('.vc-streamguard-feedback');
+    function updatePreview() {
+        const count = rows.filter(row => row.dataset.vcStreamguardChat === 'revealed').length;
+        pill.textContent = `StreamGuard active, ${count} revealed`;
+        const hidden = selectedRow.dataset.vcStreamguardChat !== 'revealed';
+        body.dataset.vcStreamguardHidden = String(hidden);
+        overlay.hidden = !hidden;
+        rows.forEach(row => {
+            let tag = row.querySelector('.vc-streamguard-visible-tag');
+            if (row.dataset.vcStreamguardChat === 'revealed' && !tag) {
+                tag = document.createElement('span');
+                tag.className = 'vc-streamguard-visible-tag';
+                tag.textContent = 'MOCK';
+                row.append(tag);
+            } else if (row.dataset.vcStreamguardChat !== 'revealed' && tag) tag.remove();
+        });
+    }
+    function closeDialog() { if (dialog.open) dialog.close(); }
+    themeButton.addEventListener('click', () => {
+        const isLight = body.classList.toggle('vc-streamguard-theme-light');
+        themeButton.textContent = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+    });
+    document.querySelectorAll('.vc-streamguard-open-dialog').forEach(button => button.addEventListener('click', () => dialog.showModal()));
+    document.querySelectorAll('.vc-streamguard-continue').forEach(button => button.addEventListener('click', () => {
+        selectedRow.dataset.vcStreamguardChat = 'revealed';
+        feedback.textContent = '';
+        updatePreview();
+        closeDialog();
+    }));
+    document.querySelectorAll('.vc-streamguard-hide-chat').forEach(button => button.addEventListener('click', () => {
+        selectedRow.dataset.vcStreamguardChat = 'hidden';
+        feedback.textContent = '';
+        updatePreview();
+        closeDialog();
+    }));
+    document.querySelector('.vc-streamguard-hide-all').addEventListener('click', () => {
+        rows.forEach(row => { row.dataset.vcStreamguardChat = 'hidden'; });
+        feedback.textContent = '';
+        updatePreview();
+        closeDialog();
+    });
+    document.querySelectorAll('.vc-streamguard-stop-sharing').forEach(button => button.addEventListener('click', () => {
+        rows.forEach(row => { row.dataset.vcStreamguardChat = 'hidden'; });
+        updatePreview();
+        closeDialog();
+        feedback.textContent = 'Preview only: no live stream was stopped.';
+    }));
+})();
+</script>
+</body>
+</html>
