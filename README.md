@@ -27,9 +27,10 @@ StreamGuard works with **Vencord** and **Equicord** source builds. It does not i
 
    ```powershell
    pnpm build
+   pnpm inject
    ```
 
-5. Install/use your rebuilt client as usual, restart Discord, and enable **StreamGuard** in Plugins.
+5. Fully close Discord, start it again, and enable **StreamGuard** in Plugins. If this source build was already injected into Discord, you can skip `pnpm inject` and just rebuild and restart.
 
 Folder layout:
 
@@ -115,16 +116,14 @@ pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
 Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
 pnpm build
+pnpm inject
 ```
 
 #### 7. Finish
 
-Follow the client project's instructions to install your rebuilt client:
+Fully close Discord (including its system-tray process), then open it again. Enable **StreamGuard** in Plugins.
 
-- [Equicord](https://github.com/Equicord/Equicord)
-- [Vencord](https://github.com/Vendicated/Vencord)
-
-Restart Discord and enable **StreamGuard** in Plugins.
+If Discord is already injected with this source checkout, you do not need to run `pnpm inject` again after ordinary plugin updates; rebuild and restart Discord.
 
 To update StreamGuard later, copy the four latest files into `src/userplugins/StreamGuard` and run `pnpm build` again.
 
