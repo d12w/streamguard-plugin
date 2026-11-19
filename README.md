@@ -12,121 +12,87 @@ StreamGuard is a single-source user plugin for the pinned Equicord and Vencord t
 
 ## Install
 
-StreamGuard works with **Vencord** and **Equicord** source builds. It does not install directly into regular Discord.
+StreamGuard requires a **Vencord or Equicord source build**. Follow the steps for your client below.
 
-### Already have Vencord or Equicord?
+### 1. Install the required tools (Windows)
 
-1. [Download StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip) and extract it.
-2. In your Vencord/Equicord folder, create `src/userplugins/StreamGuard`.
-3. Copy these four files from the extracted folder into `StreamGuard`:
-   - `index.tsx`
-   - `logic.ts`
-   - `compat.ts`
-   - `styles.css`
-4. Open PowerShell in your Vencord/Equicord folder and run:
+Install these first:
 
-   ```powershell
-   pnpm build
-   pnpm inject
-   ```
+- [Git for Windows](https://git-scm.com/install/win) — download and run the installer.
+- [Node.js LTS](https://nodejs.org/en/download/) — download the Windows Installer (.msi) and run it.
+- [pnpm](https://pnpm.io/installation) — after installing Node.js, open PowerShell and run:
 
-5. Fully close Discord, start it again, and enable **StreamGuard** in Plugins. If this source build was already injected into Discord, you can skip `pnpm inject` and just rebuild and restart.
+  ```powershell
+  npm install --global pnpm
+  ```
 
-Folder layout:
-
-```text
-src/userplugins/StreamGuard/
-├── index.tsx
-├── logic.ts
-├── compat.ts
-└── styles.css
-```
-
-**Copy the four files, not the whole extracted ZIP folder.** If your source checkout is ready, you do not need to clone it again or reinstall dependencies.
-
-### New to Vencord or Equicord? (Windows)
-
-Follow these steps in order. You only need to install Git, Node.js, and pnpm once.
-
-#### 1. Install Git
-
-1. Open the official [Git for Windows download](https://git-scm.com/install/win).
-2. Download the installer and run it.
-3. Keep the default options and finish the installation.
-
-#### 2. Install Node.js
-
-1. Open the official [Node.js download page](https://nodejs.org/en/download/).
-2. Download the **LTS Windows Installer (.msi)**. Use Node.js **22 or newer**.
-3. Run the installer, keep the default options, and finish.
-4. Close and reopen PowerShell.
-
-#### 3. Install [pnpm](https://pnpm.io/installation)
-
-Open PowerShell and run:
-
-```powershell
-npm install --global pnpm@12
-```
-
-#### 4. Check that everything is installed
-
-Run these commands:
+Close and reopen PowerShell, then check that all tools are available:
 
 ```powershell
 git --version
 node --version
-npm --version
 pnpm --version
 ```
 
-Each command should show a version number. If a command is not recognized, restart PowerShell or reinstall that tool before continuing.
+### 2. Download and set up Vencord or Equicord
 
-#### 5. Download StreamGuard and a client
-
-Choose a place for the source folders. In PowerShell, run:
-
-```powershell
-mkdir "$HOME\StreamGuard-Setup"
-cd "$HOME\StreamGuard-Setup"
-git clone https://github.com/d12w/streamguard-plugin.git
-$PluginDir = (Resolve-Path ".\streamguard-plugin").Path
-```
-
-Now choose **one** client:
-
-**Equicord**
-```powershell
-git clone https://github.com/Equicord/Equicord.git
-cd Equicord
-```
+Choose **one** client. Open PowerShell in the folder where you want to keep its source.
 
 **Vencord**
+
 ```powershell
 git clone https://github.com/Vendicated/Vencord.git
 cd Vencord
 ```
 
-#### 6. Install dependencies and add StreamGuard
+**Equicord**
 
-Run these commands from inside the client folder:
+```powershell
+git clone https://github.com/Equicord/Equicord.git
+cd Equicord
+```
+
+Install dependencies, create the user plugin directory, build the client, and inject it into Discord:
 
 ```powershell
 pnpm install --frozen-lockfile
-New-Item -ItemType Directory -Force "src/userplugins/StreamGuard" | Out-Null
-Copy-Item "$PluginDir/index.tsx", "$PluginDir/logic.ts", "$PluginDir/compat.ts", "$PluginDir/styles.css" "src/userplugins/StreamGuard/"
+New-Item -ItemType Directory -Force "src/userplugins" | Out-Null
 pnpm build
 pnpm inject
 ```
 
-#### 7. Finish
+The installer opened by `pnpm inject` will let you select the Discord installation to patch. Complete that step before continuing.
 
-Fully close Discord (including its system-tray process), then open it again. Enable **StreamGuard** in Plugins.
+### 3. Add StreamGuard
 
-If Discord is already injected with this source checkout, you do not need to run `pnpm inject` again after ordinary plugin updates; rebuild and restart Discord.
+1. [Download StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip).
+2. Extract the ZIP. Open the extracted `streamguard-plugin-main` folder.
+3. In the Vencord/Equicord source folder, open `src/userplugins` and create a folder named `StreamGuard`.
+4. Copy these four files from the extracted ZIP directly into `src/userplugins/StreamGuard`:
+   - `index.tsx`
+   - `logic.ts`
+   - `compat.ts`
+   - `styles.css`
 
-To update StreamGuard later, copy the four latest files into `src/userplugins/StreamGuard` and run `pnpm build` again.
+Do not copy the entire ZIP folder into `userplugins`. The four files must be inside the `StreamGuard` folder.
 
+### 4. Build and launch
+
+Open PowerShell in the Vencord/Equicord source folder and run:
+
+```powershell
+pnpm build
+```
+
+Then fully close Discord (including its system-tray process) and open it again. StreamGuard should appear in the client mod's Plugins settings; enable it there.
+
+You normally do **not** need to run `pnpm inject` again after adding or updating a user plugin if this source build is already injected. Rebuild with `pnpm build` and restart Discord.
+
+### Already have Vencord or Equicord from source?
+
+Skip steps 1 and 2. Download and extract the StreamGuard ZIP, copy the four files into your existing `src/userplugins/StreamGuard` folder, then run `pnpm build` from the client source folder and restart Discord. If the source build has not been injected into Discord yet, run `pnpm inject` once.
+
+To update StreamGuard later, replace its four files in `src/userplugins/StreamGuard`, run `pnpm build`, and restart Discord.
 ## Use and reset
 
 1. **Before any live sharing**, manually disable/mute notifications and test using non-sensitive fake content with no audience or live stream. With StreamGuard enabled, enter `/streamguard` to toggle manual protection on. Inspect the sidebar, friends/activity sections, hidden chat, composer, overlay, and indicator. Try the context-menu actions and `/streamguard-panic`. This is only a smoke test, not proof that screenshares or screenshots are safe. If anything is unexpected, stop and do not share private content.
