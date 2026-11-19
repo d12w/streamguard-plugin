@@ -73,7 +73,7 @@ const settings = definePluginSettings({
     },
     suppressNotifications: {
         type: OptionType.BOOLEAN,
-        description: "Suppress notifications while protection is active, when supported.",
+        description: "Show a reminder to mute notifications manually; StreamGuard cannot suppress them automatically.",
         default: true,
         onChange: settingsChanged
     },
