@@ -56,18 +56,17 @@ Install dependencies, create the user plugin directory, build the client, and in
 
 ```powershell
 pnpm install --frozen-lockfile
-New-Item -ItemType Directory -Force "src/userplugins" | Out-Null
 pnpm build
 pnpm inject
 ```
 
-The installer opened by `pnpm inject` will let you select the Discord installation to patch. Complete that step before continuing.
+The first build prepares the client. The installer opened by `pnpm inject` will let you select the Discord installation to patch. Complete that step before adding the plugin.
 
 ### 3. Add StreamGuard
 
 1. [Download StreamGuard ZIP](https://github.com/d12w/streamguard-plugin/archive/refs/heads/main.zip).
 2. Extract the ZIP. Open the extracted `streamguard-plugin-main` folder.
-3. In the Vencord/Equicord source folder, open `src/userplugins` and create a folder named `StreamGuard`.
+3. In the Vencord/Equicord source folder, create `src/userplugins/StreamGuard` (the `userplugins` folder is created as part of this step).
 4. Copy these four files from the extracted ZIP directly into `src/userplugins/StreamGuard`:
    - `index.tsx`
    - `logic.ts`
