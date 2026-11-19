@@ -1,4 +1,4 @@
-# The Plugin is generally safe and does not do something illegal in discord, but still, you're using it at your own risk.
+# This plugin is generally safe and is not intended to violate Discord's rules. However, you use it at your own risk.
 
 # StreamGuard
 
