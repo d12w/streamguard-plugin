@@ -2,6 +2,10 @@
 
 # StreamGuard
 
+<sup>**EXPERIMENTAL RELEASE · v0.1.0**</sup>
+
+StreamGuard is publicly available for testing and feedback. It is experimental privacy software, not a guaranteed privacy or screen-sharing protection tool. Please read the limitations below before installing.
+
 > **Already have Vencord or Equicord built from source?** Skip steps 1 and 2 below. Go straight to [Add StreamGuard](#3-add-streamguard). Move the extracted `streamguard-plugin-main` folder directly into `src/userplugins`—do not copy its files individually. Then run `pnpm build` and restart Discord. Run `pnpm inject` only if your source build has not been injected into Discord yet.
 
 > **Privacy warning: experimental; do not rely on StreamGuard to protect private information.** The project author reports that it works on both Equicord and Vencord. The build and mock-test results in this repository are not an independent live-client verification. There is no guarantee that selectors match every client version, that blur is unreadable, or that every sensitive surface is covered. Do not expose private content to an audience, screen recording, or screenshots on the assumption that this plugin will hide it. Close sensitive content and use Discord and operating-system controls instead.
@@ -98,7 +102,7 @@ You normally do **not** need to run `pnpm inject` again after adding or updating
 
 Skip steps 1 and 2. Download and extract the StreamGuard ZIP, then move the entire `streamguard-plugin-main` folder into your existing `src/userplugins` directory. If `userplugins` does not exist, create it first. Do not copy the files individually. Run `pnpm build` from the client source folder and restart Discord. If the source build has not been injected into Discord yet, run `pnpm inject` once.
 
-To update StreamGuard later, replace its four files in `src/userplugins/streamGuard`, run `pnpm build`, and restart Discord.
+To update StreamGuard later, remove the existing `src/userplugins/streamguard-plugin-main` folder, move the newly extracted `streamguard-plugin-main` folder into `src/userplugins`, run `pnpm build`, and restart Discord.
 
 ## Use and reset
 
