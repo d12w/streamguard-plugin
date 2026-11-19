@@ -1,3 +1,5 @@
+# The Plugin is generally safe and does not do something illegal in discord, but still, you're using it at your own risk.
+
 # StreamGuard
 
 > **Already have Vencord or Equicord built from source?** Skip steps 1 and 2 below. Go straight to [Add StreamGuard](#3-add-streamguard). Move the extracted `streamguard-plugin-main` folder directly into `src/userplugins`—do not copy its files individually. Then run `pnpm build` and restart Discord. Run `pnpm inject` only if your source build has not been injected into Discord yet.
