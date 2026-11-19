@@ -14,7 +14,7 @@ StreamGuard is a single-source user plugin for the pinned Equicord and Vencord t
 
 **This is a developer plugin for source checkouts, not a one-click plugin for the ordinary Discord app.** You need Git, Node.js 22 or newer, and pnpm. Build and install each client mod using that project's own current instructions for your operating system. The plugin was build-checked at the client commits listed in [COMPATIBILITY.md](COMPATIBILITY.md); upstream APIs can change. Use the pnpm version declared by the client checkout when possible.
 
-Get the plugin source using **either** Git or GitHub's built-in ZIP download. GitHub automatically creates the ZIP when you choose **Code → Download ZIP**; no separate release asset is needed. The source archive is trimmed to the runtime files and license, and extracts to a folder such as `streamguard-plugin-main`. Because this repository is private, you must be signed in and have access to download it; it is not publicly discoverable while private.
+Get the plugin source using **either** Git or GitHub's built-in ZIP download. GitHub automatically creates the ZIP when you choose **Code → Download ZIP**; no separate release asset is needed. The ZIP contains the repository's tracked files (including documentation, tests, and development tools), not just the runtime files. It extracts to a folder such as `streamguard-plugin-main`. Because this repository is public, anyone can view and download it without signing in.
 
 **Option A — clone with Git** (run in a working directory where you want the three source checkouts):
 
