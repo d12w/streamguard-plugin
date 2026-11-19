@@ -9,7 +9,7 @@
 | Equicord | `d7da0517c84637fa7bb8acb4e2e0f2ebf9069d2f` | `pnpm@12.18.0` |
 | Vencord | `e75ac9ace41f6212cfaa2d5f3670830be392da4e` | `pnpm@12.15.0` |
 
-The same StreamGuard source files are copied to each checkout's `src/userplugins/StreamGuard` directory; the optional helper script replaces the target folder, so back up local edits before using it. No Equicord-only plugin is imported, and there are no Discord webpack code patches in StreamGuard. The code uses platform-provided DOM and JavaScript globals in addition to the imports listed below.
+The extracted `streamguard-plugin-main` folder is moved directly into each checkout's `src/userplugins/` directory; the optional helper script replaces the target folder, so back up local edits before using it. No Equicord-only plugin is imported, and there are no Discord webpack code patches in StreamGuard. The code uses platform-provided DOM and JavaScript globals in addition to the imports listed below.
 
 **Validation status:** baseline and final plugin `npx tsc --noEmit`, `pnpm build`, and `pnpm lint` passed in both pinned checkouts; a separate explicit lint of all six plugin/test source files also passed with no warnings or errors. In each checkout the pure logic suite passed **25/25** and the mock Chromium suite passed **9/9**. `StreamGuard` appears in each built renderer bundle. See [TEST_RESULTS.md](TEST_RESULTS.md) for commands, scope, and full test output. The available pnpm was `11.25.0`, which reports a mismatch with the version declared in each repository. Simulated reload and mocked DOM tests are not live Discord tests; the plugin itself starts a fresh state on reload.
 
